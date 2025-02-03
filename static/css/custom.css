@@ -1,0 +1,82 @@
+:root {
+    --agri-green: #2c5f2d;
+    --agri-light-green: #97bc62;
+}
+
+/* Layout */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* Navigation */
+.navbar-brand {
+    color: var(--agri-green) !important;
+    font-weight: bold;
+}
+
+/* Chat */
+.messages-container {
+    height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.25rem;
+    padding: 1rem;
+}
+
+.message {
+    margin-bottom: 1rem;
+    max-width: 80%;
+}
+
+.message.sent {
+    margin-left: auto;
+}
+
+.message-content {
+    padding: 0.5rem 1rem;
+    border-radius: 1rem;
+    background-color: var(--bs-light);
+}
+
+.message.sent .message-content {
+    background-color: var(--agri-light-green);
+    color: white;
+}
+
+/* Map */
+#map {
+    height: 400px;
+    width: 100%;
+    border-radius: 0.25rem;
+}
+
+/* Product cards */
+.product-card {
+    transition: transform 0.2s;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Utility classes */
+.text-agri-green {
+    color: var(--agri-green);
+}
+
+.bg-agri-green {
+    background-color: var(--agri-green);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .message {
+        max-width: 90%;
+    }
+}

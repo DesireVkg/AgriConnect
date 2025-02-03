@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}AgriConnect - Ajouter un produit{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4">Ajouter un nouveau produit</h2>
+                    <form id="create-product-form" method="POST" action="{{ url_for('products.create') }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Nom du produit</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="price" class="form-label">Prix (FCFA)</label>
+                                <input type="number" class="form-control" id="price" name="price" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="quantity" class="form-label">Quantité</label>
+                                <input type="number" class="form-control" id="quantity" name="quantity" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="unit" class="form-label">Unité</label>
+                                <select class="form-select" id="unit" name="unit" required>
+                                    <option value="kg">Kilogrammes (kg)</option>
+                                    <option value="t">Tonnes (t)</option>
+                                    <option value="sac">Sacs</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Localisation</label>
+                            <div id="map" class="mb-2"></div>
+                            <p class="text-muted small">Cliquez sur la carte pour sélectionner la position</p>
+                            <input type="hidden" id="latitude" name="latitude" required>
+                            <input type="hidden" id="longitude" name="longitude" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="location" class="form-label">Adresse/Description du lieu</label>
+                            <input type="text" class="form-control" id="location" name="location" required>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success">Publier le produit</button>
+                            <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-secondary">Annuler</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endblock %}

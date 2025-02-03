@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}AgriConnect - Tableau de bord Commerçant{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Tableau de bord Commerçant</h2>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="card-title">Produits suivis</h3>
+                    <div id="map" class="mb-4"></div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Produit</th>
+                                    <th>Agriculteur</th>
+                                    <th>Prix</th>
+                                    <th>Location</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in followed_products %}
+                                <tr>
+                                    <td>{{ product.name }}</td>
+                                    <td>{{ product.owner.username }}</td>
+                                    <td>{{ product.price }} FCFA</td>
+                                    <td>{{ product.location }}</td>
+                                    <td>
+                                        <a href="{{ url_for('chat.chat', user_id=product.user_id) }}" 
+                                           class="btn btn-sm btn-success">Contacter</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="card-title">Conversations récentes</h3>
+                    <div class="list-group list-group-flush">
+                        {% for message in current_user.messages_received[-5:]|reverse %}
+                        <a href="{{ url_for('chat.chat', user_id=message.sender_id) }}" 
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between">
+                                <h6 class="mb-1">{{ message.sender.username }}</h6>
+                                <small>{{ message.timestamp.strftime('%H:%M') }}</small>
+                            </div>
+                            <p class="mb-1">{{ message.content[:50] }}...</p>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title">Recherche de produits</h3>
+                    <form id="product-filter-form">
+                        <div class="mb-3">
+                            <label class="form-label">Type de produit</label>
+                            <input type="text" class="form-control" name="search">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Distance maximale</label>
+                            <select class="form-select" name="distance">
+                                <option value="10">10 km</option>
+                                <option value="25">25 km</option>
+                                <option value="50">50 km</option>
+                                <option value="100">100 km</option>
+                            </select>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">Rechercher</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endblock %}

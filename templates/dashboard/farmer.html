@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}AgriConnect - Tableau de bord Agriculteur{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Tableau de bord Agriculteur</h2>
+        <a href="{{ url_for('products.create') }}" class="btn btn-success">
+            <i data-feather="plus"></i> Ajouter un produit
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="card-title">Mes produits</h3>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Produit</th>
+                                    <th>Prix</th>
+                                    <th>Quantité</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in current_user.products %}
+                                <tr>
+                                    <td>{{ product.name }}</td>
+                                    <td>{{ product.price }} FCFA</td>
+                                    <td>{{ product.quantity }} {{ product.unit }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if product.status == 'available' else 'secondary' }}">
+                                            {{ product.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="#" class="btn btn-sm btn-outline-primary">Modifier</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="card-title">Messages récents</h3>
+                    <div class="list-group list-group-flush">
+                        {% for message in current_user.messages_received[-5:]|reverse %}
+                        <a href="{{ url_for('chat.chat', user_id=message.sender_id) }}" 
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between">
+                                <h6 class="mb-1">{{ message.sender.username }}</h6>
+                                <small>{{ message.timestamp.strftime('%H:%M') }}</small>
+                            </div>
+                            <p class="mb-1">{{ message.content[:50] }}...</p>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title">Mon profil</h3>
+                    <form method="POST" action="#">
+                        <div class="mb-3">
+                            <label class="form-label">Nom complet</label>
+                            <input type="text" class="form-control" value="{{ current_user.full_name }}" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" value="{{ current_user.email }}" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Téléphone</label>
+                            <input type="tel" class="form-control" value="{{ current_user.phone }}" readonly>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

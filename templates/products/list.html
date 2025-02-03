@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}AgriConnect - Produits disponibles{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="card-title">Filtres</h3>
+                    <form id="product-filter-form">
+                        <div class="mb-3">
+                            <label class="form-label">Recherche</label>
+                            <input type="text" class="form-control" name="search" 
+                                   value="{{ request.args.get('search', '') }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Prix maximum</label>
+                            <input type="number" class="form-control" name="max_price"
+                                   value="{{ request.args.get('max_price', '') }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Localisation</label>
+                            <select class="form-select" name="location">
+                                <option value="">Toutes les zones</option>
+                                {% for location in locations %}
+                                <option value="{{ location }}" 
+                                        {% if request.args.get('location') == location %}selected{% endif %}>
+                                    {{ location }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">Filtrer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div id="map"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <h2 class="mb-4">Produits disponibles</h2>
+            <div class="row g-4">
+                {% for product in products %}
+                <div class="col-md-6">
+                    <div class="card product-card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ product.name }}</h5>
+                            <p class="card-text">{{ product.description }}</p>
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    <i data-feather="map-pin" class="feather-sm"></i> {{ product.location }}
+                                </small>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-0">{{ product.price }} FCFA</h5>
+                                    <small class="text-muted">
+                                        {{ product.quantity }} {{ product.unit }}
+                                    </small>
+                                </div>
+                                {% if current_user.is_authenticated and current_user.user_type == 'merchant' %}
+                                <a href="{{ url_for('chat.chat', user_id=product.user_id) }}" 
+                                   class="btn btn-success">
+                                    Contacter le vendeur
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <small class="text-muted">
+                                Publié par {{ product.owner.username }} 
+                                le {{ product.created_at.strftime('%d/%m/%Y') }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const products = {{ products_json|safe }};
+</script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endblock %}
