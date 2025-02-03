@@ -9,7 +9,7 @@
             <div class="card">
                 <div class="card-body">
                     <h2 class="card-title text-center mb-4">Ajouter un nouveau produit</h2>
-                    <form id="create-product-form" method="POST" action="{{ url_for('products.create') }}">
+                    <form id="create-product-form" method="POST" action="{{ url_for('products.create') }}" enctype="multipart/form-data">
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="name" class="form-label">Nom du produit</label>
@@ -39,6 +39,12 @@
                         <div class="mb-3">
                             <label for="description" class="form-label">Description</label>
                             <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="product_image" class="form-label">Photo du produit</label>
+                            <input type="file" class="form-control" id="product_image" name="product_image" accept="image/*" required>
+                            <div class="form-text">Formats acceptés : JPG, PNG. Taille maximale : 5 MB</div>
                         </div>
 
                         <div class="mb-3">
