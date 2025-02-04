@@ -144,6 +144,52 @@ def list():
     products = Product.query.order_by(Product.created_at.desc()).all()
     return render_template('products/list.html', products=products)
 
+@products_bp.route('/<int:id>')
+def detail(id):
+    product = Product.query.get_or_404(id)
+    # Get similar products (same type, excluding current product)
+    similar_products = Product.query.filter(
+        Product.id != id,
+        Product.status == 'available'
+    ).limit(3).all()
+    return render_template('products/detail.html', product=product, similar_products=similar_products)
+
+@products_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit(id):
+    product = Product.query.get_or_404(id)
+    if product.user_id != current_user.id:
+        flash('Vous n\'êtes pas autorisé à modifier ce produit')
+        return redirect(url_for('products.list'))
+
+    if request.method == 'POST':
+        # Update product details
+        product.name = request.form.get('name')
+        product.description = request.form.get('description')
+        product.price = float(request.form.get('price'))
+        product.quantity = float(request.form.get('quantity'))
+        product.unit = request.form.get('unit')
+        product.location = request.form.get('location')
+        product.latitude = float(request.form.get('latitude'))
+        product.longitude = float(request.form.get('longitude'))
+
+        # Handle new image if uploaded
+        if 'product_image' in request.files:
+            file = request.files['product_image']
+            if file and file.filename and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                filename = f"{int(datetime.utcnow().timestamp())}_{filename}"
+                file_path = os.path.join(UPLOAD_FOLDER, filename)
+                file.save(file_path)
+                product.image_url = os.path.join('uploads/products', filename)
+
+        db.session.commit()
+        flash('Produit mis à jour avec succès')
+        return redirect(url_for('dashboard.index'))
+
+    return render_template('products/create.html', product=product, edit=True)
+
+
 # Chat routes
 @chat_bp.route('/messages')
 @login_required

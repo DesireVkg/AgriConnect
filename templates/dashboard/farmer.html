@@ -6,9 +6,14 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Tableau de bord Agriculteur</h2>
-        <a href="{{ url_for('products.create') }}" class="btn btn-success">
-            <i data-feather="plus"></i> Ajouter un produit
-        </a>
+        <div>
+            <a href="{{ url_for('products.list') }}" class="btn btn-outline-success me-2">
+                <i data-feather="shopping-bag"></i> Acheter des produits
+            </a>
+            <a href="{{ url_for('products.create') }}" class="btn btn-success">
+                <i data-feather="plus"></i> Ajouter un produit
+            </a>
+        </div>
     </div>
 
     <div class="row">
@@ -16,6 +21,7 @@
             <div class="card mb-4">
                 <div class="card-body">
                     <h3 class="card-title">Mes produits</h3>
+                    {% if current_user.products %}
                     <div class="table-responsive">
                         <table class="table">
                             <thead>
@@ -39,13 +45,23 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <a href="#" class="btn btn-sm btn-outline-primary">Modifier</a>
+                                        <a href="{{ url_for('products.edit', id=product.id) }}" class="btn btn-sm btn-outline-primary">Modifier</a>
                                     </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i data-feather="package" class="text-muted mb-3" style="width: 48px; height: 48px;"></i>
+                        <h5>Vous n'avez pas encore publié de produits</h5>
+                        <p class="text-muted">Commencez à vendre en ajoutant votre premier produit</p>
+                        <a href="{{ url_for('products.create') }}" class="btn btn-success">
+                            <i data-feather="plus"></i> Ajouter un produit
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -74,8 +90,8 @@
                     <h3 class="card-title">Mon profil</h3>
                     <form method="POST" action="#">
                         <div class="mb-3">
-                            <label class="form-label">Nom complet</label>
-                            <input type="text" class="form-control" value="{{ current_user.full_name }}" readonly>
+                            <label class="form-label">Nom d'utilisateur</label>
+                            <input type="text" class="form-control" value="{{ current_user.username }}" readonly>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Email</label>
@@ -83,7 +99,11 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Téléphone</label>
-                            <input type="tel" class="form-control" value="{{ current_user.phone }}" readonly>
+                            <input type="tel" class="form-control" value="{{ current_user.phone or 'Non renseigné' }}" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Adresse</label>
+                            <input type="text" class="form-control" value="{{ current_user.address or 'Non renseignée' }}" readonly>
                         </div>
                     </form>
                 </div>

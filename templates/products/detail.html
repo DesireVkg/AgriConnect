@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}AgriConnect - {{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                {% if product.image_url %}
+                <img src="{{ url_for('static', filename=product.image_url) }}" 
+                     class="card-img-top" alt="{{ product.name }}"
+                     style="height: 400px; object-fit: cover;">
+                {% endif %}
+                <div class="card-body">
+                    <h2 class="card-title mb-4">{{ product.name }}</h2>
+                    <p class="card-text">{{ product.description }}</p>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h4 class="mb-0">{{ product.price }} FCFA</h4>
+                            <small class="text-muted">
+                                Quantité disponible: {{ product.quantity }} {{ product.unit }}
+                            </small>
+                        </div>
+                        {% if current_user.is_authenticated and current_user.id != product.user_id %}
+                        <a href="{{ url_for('chat.chat', user_id=product.user_id) }}" 
+                           class="btn btn-success btn-lg">
+                            <i data-feather="message-square"></i> Contacter le vendeur
+                        </a>
+                        {% endif %}
+                    </div>
+
+                    <hr>
+                    
+                    <div class="mb-4">
+                        <h5>Localisation</h5>
+                        <p class="mb-2">
+                            <i data-feather="map-pin"></i> {{ product.location }}
+                        </p>
+                        <div id="map" style="height: 300px;" class="mb-3"></div>
+                    </div>
+
+                    <div>
+                        <h5>Vendeur</h5>
+                        <p class="mb-1">{{ product.owner.username }}</p>
+                        <p class="text-muted">
+                            Membre depuis {{ product.owner.created_at.strftime('%B %Y') }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Produits similaires</h5>
+                    {% for similar_product in similar_products %}
+                    <a href="{{ url_for('products.detail', id=similar_product.id) }}" 
+                       class="text-decoration-none">
+                        <div class="card mb-2">
+                            {% if similar_product.image_url %}
+                            <img src="{{ url_for('static', filename=similar_product.image_url) }}" 
+                                 class="card-img-top" alt="{{ similar_product.name }}"
+                                 style="height: 100px; object-fit: cover;">
+                            {% endif %}
+                            <div class="card-body">
+                                <h6 class="card-title">{{ similar_product.name }}</h6>
+                                <p class="card-text">{{ similar_product.price }} FCFA</p>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const product = {
+        latitude: {{ product.latitude }},
+        longitude: {{ product.longitude }},
+        name: "{{ product.name }}"
+    };
+</script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endblock %}
