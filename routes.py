@@ -7,6 +7,8 @@ from flask_socketio import emit, join_room, leave_room
 from app import db, login_manager, socketio
 from models import User, Product, Message
 from datetime import datetime
+from sqlalchemy import and_, or_, desc
+from sqlalchemy.orm import aliased
 
 # Blueprint definitions
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -143,14 +145,55 @@ def list():
     return render_template('products/list.html', products=products)
 
 # Chat routes
+@chat_bp.route('/messages')
+@login_required
+def messages():
+    # Get all messages sent or received by the current user
+    messages = Message.query.filter(
+        or_(
+            Message.sender_id == current_user.id,
+            Message.recipient_id == current_user.id
+        )
+    ).order_by(desc(Message.timestamp)).all()
+
+    # Group messages by conversation
+    conversations = {}
+    for message in messages:
+        other_user_id = message.recipient_id if message.sender_id == current_user.id else message.sender_id
+        if other_user_id not in conversations:
+            other_user = User.query.get(other_user_id)
+            conversations[other_user_id] = {
+                'other_user': other_user,
+                'last_message': message
+            }
+
+    return render_template('chat/messages.html', conversations=conversations.values())
+
 @chat_bp.route('/<int:user_id>')
 @login_required
 def chat(user_id):
     other_user = User.query.get_or_404(user_id)
+
+    # Mark messages as read
+    unread_messages = Message.query.filter(
+        Message.sender_id == user_id,
+        Message.recipient_id == current_user.id,
+        Message.read == False
+    ).all()
+
+    for message in unread_messages:
+        message.read = True
+
+    if unread_messages:
+        db.session.commit()
+
     messages = Message.query.filter(
-        ((Message.sender_id == current_user.id) & (Message.recipient_id == user_id)) |
-        ((Message.sender_id == user_id) & (Message.recipient_id == current_user.id))
+        or_(
+            and_(Message.sender_id == current_user.id, Message.recipient_id == user_id),
+            and_(Message.sender_id == user_id, Message.recipient_id == current_user.id)
+        )
     ).order_by(Message.timestamp).all()
+
     return render_template('chat/index.html', other_user=other_user, messages=messages)
 
 

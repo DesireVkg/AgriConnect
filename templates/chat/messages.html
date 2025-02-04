@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}AgriConnect - Messages{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-dark">
+                    <h5 class="mb-0">Mes conversations</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for conversation in conversations %}
+                        <a href="{{ url_for('chat.chat', user_id=conversation.other_user.id) }}" 
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ conversation.other_user.username }}</h6>
+                                    <p class="mb-1 message-preview text-muted">
+                                        {% if conversation.last_message %}
+                                            {{ conversation.last_message.content }}
+                                        {% else %}
+                                            Démarrer une conversation
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                {% if conversation.last_message %}
+                                <small class="text-muted">
+                                    {{ conversation.last_message.timestamp.strftime('%H:%M') }}
+                                    {% if not conversation.last_message.read and conversation.last_message.recipient_id == current_user.id %}
+                                        <span class="badge bg-success rounded-pill ms-2">Nouveau</span>
+                                    {% endif %}
+                                </small>
+                                {% endif %}
+                            </div>
+                        </a>
+                        {% else %}
+                        <div class="list-group-item text-center py-4">
+                            <i data-feather="message-square" class="mb-2"></i>
+                            <p class="mb-0">Aucune conversation pour le moment</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -27,6 +27,13 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+    @property
+    def unread_messages_count(self):
+        return Message.query.filter(
+            Message.recipient_id == self.id,
+            Message.read == False
+        ).count()
+
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)

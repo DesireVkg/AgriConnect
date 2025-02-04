@@ -13,7 +13,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('main.index') }}">
-                <i data-feather="leaf"></i> AgriConnect
+                <i data-feather="sprout"></i> AgriConnect
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -21,21 +21,39 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('products.list') }}">Produits</a>
+                        <a class="nav-link" href="{{ url_for('products.list') }}">
+                            <i data-feather="package"></i> Produits
+                        </a>
                     </li>
                     {% if current_user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('dashboard.index') }}">Tableau de bord</a>
+                            <a class="nav-link" href="{{ url_for('dashboard.index') }}">
+                                <i data-feather="layout"></i> Tableau de bord
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.logout') }}">Déconnexion</a>
+                            <a class="nav-link messages-button" href="{{ url_for('chat.messages') }}">
+                                <i data-feather="message-square"></i> Messages
+                                {% if current_user.unread_messages_count %}
+                                <span class="messages-count">{{ current_user.unread_messages_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                                <i data-feather="log-out"></i> Déconnexion
+                            </a>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.login') }}">Connexion</a>
+                            <a class="nav-link" href="{{ url_for('auth.login') }}">
+                                <i data-feather="log-in"></i> Connexion
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.register') }}">Inscription</a>
+                            <a class="nav-link" href="{{ url_for('auth.register') }}">
+                                <i data-feather="user-plus"></i> Inscription
+                            </a>
                         </li>
                     {% endif %}
                 </ul>
