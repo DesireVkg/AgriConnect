@@ -3,13 +3,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const messageForm = document.getElementById('message-form');
     const messageInput = document.getElementById('message-input');
     const messagesContainer = document.getElementById('messages');
-    
+
+    // Join room
     if (messageForm) {
+        const recipientId = messageForm.dataset.recipient;
+        socket.emit('join', {room: recipientId});
+
         messageForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const message = messageInput.value.trim();
-            const recipientId = messageForm.dataset.recipient;
-            
+
             if (message) {
                 socket.emit('send_message', {
                     recipient_id: recipientId,
@@ -19,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
+
     socket.on('new_message', function(data) {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message');

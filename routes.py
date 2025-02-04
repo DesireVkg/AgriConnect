@@ -3,6 +3,7 @@ from werkzeug.utils import secure_filename
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
+from flask_socketio import emit, join_room, leave_room
 from app import db, login_manager, socketio
 from models import User, Product, Message
 from datetime import datetime
@@ -153,6 +154,12 @@ def chat(user_id):
     return render_template('chat/index.html', other_user=other_user, messages=messages)
 
 
+@socketio.on('join')
+def on_join(data):
+    if current_user.is_authenticated:
+        room = str(data['room'])
+        join_room(room)
+
 @socketio.on('send_message')
 def handle_message(data):
     if not current_user.is_authenticated:
@@ -166,11 +173,18 @@ def handle_message(data):
     db.session.add(message)
     db.session.commit()
 
-    socketio.emit('new_message', {
+    # Emit to both sender and recipient rooms
+    sender_room = str(current_user.id)
+    recipient_room = str(data['recipient_id'])
+
+    message_data = {
         'sender_id': current_user.id,
         'content': data['content'],
         'timestamp': message.timestamp.isoformat()
-    }, room=data['recipient_id'])
+    }
+
+    socketio.emit('new_message', message_data, room=sender_room)
+    socketio.emit('new_message', message_data, room=recipient_room)
 
 def register_blueprints(app):
     app.register_blueprint(auth_bp)
