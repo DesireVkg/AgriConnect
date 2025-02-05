@@ -14,12 +14,14 @@ class User(UserMixin, db.Model):
     phone = db.Column(db.String(20))
     address = db.Column(db.String(200))
     products = db.relationship('Product', backref='owner', lazy=True)
+    orders_made = db.relationship('Order', foreign_keys='Order.buyer_id', backref='buyer', lazy=True)
+    orders_received = db.relationship('Order', foreign_keys='Order.seller_id', backref='seller', lazy=True)
     messages_sent = db.relationship('Message', 
                                    foreign_keys='Message.sender_id',
                                    backref='sender', lazy=True)
     messages_received = db.relationship('Message',
-                                       foreign_keys='Message.recipient_id',
-                                       backref='recipient', lazy=True)
+                                      foreign_keys='Message.recipient_id',
+                                      backref='recipient', lazy=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -48,6 +50,7 @@ class Product(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     status = db.Column(db.String(20), default='available')
     image_url = db.Column(db.String(200))
+    orders = db.relationship('Order', backref='product', lazy=True)
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -56,3 +59,15 @@ class Message(db.Model):
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     read = db.Column(db.Boolean, default=False)
+
+class Order(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    buyer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    quantity = db.Column(db.Float, nullable=False)
+    total_amount = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(20), default='pending')  # pending, paid, completed, cancelled
+    payment_intent_id = db.Column(db.String(200))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

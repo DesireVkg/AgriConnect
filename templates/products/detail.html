@@ -15,7 +15,7 @@
                 <div class="card-body">
                     <h2 class="card-title mb-4">{{ product.name }}</h2>
                     <p class="card-text">{{ product.description }}</p>
-                    
+
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <div>
                             <h4 class="mb-0">{{ product.price }} FCFA</h4>
@@ -24,15 +24,18 @@
                             </small>
                         </div>
                         {% if current_user.is_authenticated and current_user.id != product.user_id %}
+                        <button class="btn btn-success btn-lg" id="buyButton">
+                            <i data-feather="shopping-cart"></i> Acheter
+                        </button>
                         <a href="{{ url_for('chat.chat', user_id=product.user_id) }}" 
-                           class="btn btn-success btn-lg">
+                           class="btn btn-outline-success btn-lg ms-2">
                             <i data-feather="message-square"></i> Contacter le vendeur
                         </a>
                         {% endif %}
                     </div>
 
                     <hr>
-                    
+
                     <div class="mb-4">
                         <h5>Localisation</h5>
                         <p class="mb-2">
@@ -77,15 +80,140 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de paiement -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Payer {{ product.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="payment-form">
+                    <div class="mb-3">
+                        <label class="form-label">Quantité</label>
+                        <input type="number" class="form-control" id="quantity" 
+                               min="1" max="{{ product.quantity }}" value="1">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Total</label>
+                        <h4 id="totalAmount">{{ product.price }} FCFA</h4>
+                    </div>
+                    <div id="payment-element"></div>
+                    <div id="payment-message" class="alert alert-danger mt-3" style="display: none;"></div>
+                    <button class="btn btn-success w-100 mt-3" id="submit">
+                        <span id="button-text">Payer maintenant</span>
+                        <span id="spinner" style="display: none;">
+                            <span class="spinner-border spinner-border-sm" role="status"></span>
+                        </span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
+<script src="https://js.stripe.com/v3/"></script>
 <script>
+    const stripe = Stripe('{{ stripe_publishable_key }}');
     const product = {
+        id: {{ product.id }},
+        price: {{ product.price }},
         latitude: {{ product.latitude }},
         longitude: {{ product.longitude }},
         name: "{{ product.name }}"
     };
+
+    // Gestionnaire de quantité
+    const quantityInput = document.getElementById('quantity');
+    const totalAmount = document.getElementById('totalAmount');
+
+    quantityInput.addEventListener('change', function() {
+        const total = this.value * product.price;
+        totalAmount.textContent = `${total} FCFA`;
+    });
+
+    // Gestionnaire d'achat
+    document.getElementById('buyButton').addEventListener('click', async function() {
+        const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+        modal.show();
+    });
+
+    // Formulaire de paiement
+    const form = document.getElementById('payment-form');
+    let elements;
+    let paymentElement;
+
+    document.getElementById('buyButton').addEventListener('click', async function() {
+        const quantity = document.getElementById('quantity').value;
+
+        try {
+            const response = await fetch(`/orders/create/${product.id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `quantity=${quantity}`
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                showMessage(data.error);
+                return;
+            }
+
+            const { clientSecret, order_id } = data;
+
+            elements = stripe.elements({ clientSecret });
+            paymentElement = elements.create('payment');
+            paymentElement.mount('#payment-element');
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                setLoading(true);
+
+                const { error } = await stripe.confirmPayment({
+                    elements,
+                    confirmParams: {
+                        return_url: `${window.location.origin}/orders/confirm/${order_id}`,
+                    },
+                });
+
+                if (error) {
+                    showMessage(error.message);
+                    setLoading(false);
+                }
+            });
+        } catch (err) {
+            showMessage("Une erreur s'est produite. Veuillez réessayer.");
+        }
+    });
+
+    function showMessage(messageText) {
+        const messageContainer = document.getElementById('payment-message');
+        messageContainer.style.display = 'block';
+        messageContainer.textContent = messageText;
+    }
+
+    function setLoading(isLoading) {
+        const submitButton = document.getElementById('submit');
+        const spinner = document.getElementById('spinner');
+        const buttonText = document.getElementById('button-text');
+
+        if (isLoading) {
+            submitButton.disabled = true;
+            spinner.style.display = 'inline-block';
+            buttonText.style.display = 'none';
+        } else {
+            submitButton.disabled = false;
+            spinner.style.display = 'none';
+            buttonText.style.display = 'inline-block';
+        }
+    }
 </script>
 <script src="{{ url_for('static', filename='js/map.js') }}"></script>
 {% endblock %}

@@ -1,14 +1,18 @@
 import os
+import stripe
 from werkzeug.utils import secure_filename
-from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app
+from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
 from flask_socketio import emit, join_room, leave_room
 from app import db, login_manager, socketio
-from models import User, Product, Message
+from models import User, Product, Message, Order
 from datetime import datetime
 from sqlalchemy import and_, or_, desc
 from sqlalchemy.orm import aliased
+
+# Configure Stripe
+stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 
 # Blueprint definitions
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -16,6 +20,7 @@ main_bp = Blueprint('main', __name__)
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 products_bp = Blueprint('products', __name__, url_prefix='/products')
 chat_bp = Blueprint('chat', __name__, url_prefix='/chat')
+orders_bp = Blueprint('orders', __name__, url_prefix='/orders')
 
 # Create upload folder if it doesn't exist
 UPLOAD_FOLDER = 'static/uploads/products'
@@ -152,7 +157,13 @@ def detail(id):
         Product.id != id,
         Product.status == 'available'
     ).limit(3).all()
-    return render_template('products/detail.html', product=product, similar_products=similar_products)
+
+    stripe_publishable_key = os.environ.get('STRIPE_PUBLISHABLE_KEY')
+
+    return render_template('products/detail.html', 
+                         product=product, 
+                         similar_products=similar_products,
+                         stripe_publishable_key=stripe_publishable_key)
 
 @products_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -275,9 +286,102 @@ def handle_message(data):
     socketio.emit('new_message', message_data, room=sender_room)
     socketio.emit('new_message', message_data, room=recipient_room)
 
+# Order routes
+@orders_bp.route('/create/<int:product_id>', methods=['POST'])
+@login_required
+def create_order(product_id):
+    product = Product.query.get_or_404(product_id)
+    quantity = float(request.form.get('quantity', 1))
+
+    if quantity > product.quantity:
+        flash('Quantité non disponible')
+        return redirect(url_for('products.detail', id=product_id))
+
+    total_amount = product.price * quantity
+
+    # Create order
+    order = Order(
+        buyer_id=current_user.id,
+        seller_id=product.user_id,
+        product_id=product_id,
+        quantity=quantity,
+        total_amount=total_amount,
+        status='pending'
+    )
+
+    db.session.add(order)
+    db.session.commit()
+
+    # Create Stripe Payment Intent
+    try:
+        intent = stripe.PaymentIntent.create(
+            amount=int(total_amount * 100),  # Stripe expects amount in cents
+            currency='xaf',
+            metadata={'order_id': order.id}
+        )
+
+        order.payment_intent_id = intent.id
+        db.session.commit()
+
+        return jsonify({
+            'clientSecret': intent.client_secret,
+            'order_id': order.id
+        })
+    except Exception as e:
+        db.session.delete(order)
+        db.session.commit()
+        return jsonify({'error': str(e)}), 403
+
+@orders_bp.route('/confirm/<int:order_id>', methods=['POST'])
+@login_required
+def confirm_payment(order_id):
+    order = Order.query.get_or_404(order_id)
+
+    if order.buyer_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    try:
+        intent = stripe.PaymentIntent.retrieve(order.payment_intent_id)
+
+        if intent.status == 'succeeded':
+            order.status = 'paid'
+            # Decrease product quantity
+            order.product.quantity -= order.quantity
+            if order.product.quantity <= 0:
+                order.product.status = 'sold'
+
+            db.session.commit()
+
+            # Send message to seller
+            message = Message(
+                sender_id=current_user.id,
+                recipient_id=order.seller_id,
+                content=f"Nouvelle commande pour {order.product.name} - {order.quantity} {order.product.unit}"
+            )
+            db.session.add(message)
+            db.session.commit()
+
+            flash('Paiement confirmé! Le vendeur a été notifié.')
+            return jsonify({'status': 'success'})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 403
+
+    return jsonify({'status': 'pending'})
+
+@orders_bp.route('/my-orders')
+@login_required
+def my_orders():
+    # Get both bought and sold orders
+    bought_orders = Order.query.filter_by(buyer_id=current_user.id).order_by(Order.created_at.desc()).all()
+    sold_orders = Order.query.filter_by(seller_id=current_user.id).order_by(Order.created_at.desc()).all()
+
+    return render_template('orders/list.html', bought_orders=bought_orders, sold_orders=sold_orders)
+
 def register_blueprints(app):
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(products_bp)
     app.register_blueprint(chat_bp)
+    app.register_blueprint(orders_bp)

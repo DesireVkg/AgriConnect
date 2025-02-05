@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}AgriConnect - Mes Commandes{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Mes Commandes</h2>
+    
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#bought">Achats</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#sold">Ventes</a>
+        </li>
+    </ul>
+    
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="bought">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Produit</th>
+                            <th>Vendeur</th>
+                            <th>Quantité</th>
+                            <th>Montant Total</th>
+                            <th>Statut</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in bought_orders %}
+                        <tr>
+                            <td>{{ order.product.name }}</td>
+                            <td>{{ order.seller.username }}</td>
+                            <td>{{ order.quantity }} {{ order.product.unit }}</td>
+                            <td>{{ order.total_amount }} FCFA</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if order.status == 'paid' else 'warning' }}">
+                                    {{ order.status }}
+                                </span>
+                            </td>
+                            <td>{{ order.created_at.strftime('%d/%m/%Y') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="sold">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Produit</th>
+                            <th>Acheteur</th>
+                            <th>Quantité</th>
+                            <th>Montant Total</th>
+                            <th>Statut</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in sold_orders %}
+                        <tr>
+                            <td>{{ order.product.name }}</td>
+                            <td>{{ order.buyer.username }}</td>
+                            <td>{{ order.quantity }} {{ order.product.unit }}</td>
+                            <td>{{ order.total_amount }} FCFA</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if order.status == 'paid' else 'warning' }}">
+                                    {{ order.status }}
+                                </span>
+                            </td>
+                            <td>{{ order.created_at.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                <a href="{{ url_for('chat.chat', user_id=order.buyer_id) }}" 
+                                   class="btn btn-sm btn-outline-success">
+                                    Contacter l'acheteur
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
